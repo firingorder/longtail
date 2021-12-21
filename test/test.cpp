@@ -5648,15 +5648,17 @@ TEST(Longtail, TestLongtailBlockFS)
     Longtail_Free(block_store_store_index);
 
     block_store_store_index = SyncGetExistingContent(block_store, *vindex->m_ChunkCount, vindex->m_ChunkHashes, 0);
-
     ASSERT_EQ(0, Longtail_ValidateStore(block_store_store_index, vindex));
+
+    struct Longtail_BlockStoreAPI* share_block_store = Longtail_CreateLRUBlockStoreAPI(block_store, 8);
+    struct Longtail_BlockStoreAPI* lru_block_store = Longtail_CreateLRUBlockStoreAPI(share_block_store, 8);
 
 //    printf("\nReading...\n");
 
     struct Longtail_StorageAPI* block_store_fs = Longtail_CreateBlockStoreStorageAPI(
         hash_api,
         job_api,
-        block_store,
+        lru_block_store,
         block_store_store_index,
         vindex);
     ASSERT_NE((struct Longtail_StorageAPI*)0, block_store_fs);
@@ -5766,6 +5768,8 @@ TEST(Longtail, TestLongtailBlockFS)
     }
 
     SAFE_DISPOSE_API(block_store_fs);
+    SAFE_DISPOSE_API(lru_block_store);
+    SAFE_DISPOSE_API(share_block_store);
 
 //    printf("\nDone...\n");
 
@@ -6970,4 +6974,18 @@ TEST(Longtail, Longtail_Archive)
     SAFE_DISPOSE_API(hash_api);
     SAFE_DISPOSE_API(compression_registry);
     SAFE_DISPOSE_API(local_storage);
+}
+
+TEST(Longtail, FS20)
+{
+    // Take the version
+    // Get content index for that version
+    // build map to go from chunkhash->blockhash
+    // build map for each file to go from chunkhas to offset?
+
+    // map[blockhash]array[chunkhash]offset
+    // file -> array of chunks -> range -> sub-array-of-chunks -> blocks -> request blocks
+    // build map of chunk->offset in target array
+    // A) request block, wait for block, copy chunk data to target
+    // B) request blocks, 
 }
